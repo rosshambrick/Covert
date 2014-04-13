@@ -3,7 +3,7 @@ package com.rosshambrick.commandroid;
 import de.greenrobot.event.EventBus;
 
 @SuppressWarnings("ALL")
-public abstract class Command implements Runnable {
+public abstract class Command {
     private CommandProcessor mCommandProcessor;
     protected EventBus mEventBus;
 
@@ -17,9 +17,10 @@ public abstract class Command implements Runnable {
         mEventBus = eventBus;
     }
 
+
     protected abstract void execute();
 
-    public final void run() {
+    public final void executeInternal() {
         if (mIsCanceled) {
             //TODO: post a CommandCanceled event?
             return;
