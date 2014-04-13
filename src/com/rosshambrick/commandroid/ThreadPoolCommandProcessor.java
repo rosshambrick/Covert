@@ -41,7 +41,7 @@ public class ThreadPoolCommandProcessor implements CommandProcessor {
     }
 
     @Override
-    public void send(Command command) {
+    public void send(final Command command) {
         log("Sending: " + command.getClass().getSimpleName());
 
         command.setCommandProcessor(this);
@@ -51,7 +51,19 @@ public class ThreadPoolCommandProcessor implements CommandProcessor {
             mDependencyInjector.inject(command);
         }
 
-        mThreadPoolExecutor.execute(command);
+        mThreadPoolExecutor.execute(new Runnable() {
+            @Override
+            public void run() {
+                command.executeInternal();
+            }
+        });
+    }
+
+    //TODO: add a registorForStickyEvents()?
+
+    @Override
+    public void registerForEvents(Object o) {
+        mEventBus.registerSticky(o);
     }
 
     private void log(String message) {
