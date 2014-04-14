@@ -59,11 +59,14 @@ public class ThreadPoolCommandProcessor implements CommandProcessor {
         });
     }
 
-    //TODO: add a registorForStickyEvents()?
-
     @Override
     public void registerForEvents(Object o) {
         mEventBus.registerSticky(o);
+    }
+
+    @Override
+    public void unregister(Object o) {
+        mEventBus.unregister(o);
     }
 
     private void log(String message) {
