@@ -1,11 +1,9 @@
 package com.rosshambrick.commandroid;
 
-import de.greenrobot.event.EventBus;
-
 @SuppressWarnings("ALL")
 public abstract class Command {
     private CommandProcessor mCommandProcessor;
-    protected EventBus mEventBus;
+    protected Bus mBus;
 
     private boolean mIsCanceled;
 
@@ -13,10 +11,9 @@ public abstract class Command {
         mCommandProcessor = commandProcessor;
     }
 
-    public void setEventBus(EventBus eventBus) {
-        mEventBus = eventBus;
+    public void setBus(Bus bus) {
+        mBus = bus;
     }
-
 
     protected abstract void execute();
 
@@ -30,7 +27,7 @@ public abstract class Command {
             execute();
         } catch (Exception e) {
             //TODO: evaluate if a retry would be useful
-            mEventBus.post(new CommandError(this, e));
+            mBus.publish(new CommandError(this, e));
         }
     }
 
