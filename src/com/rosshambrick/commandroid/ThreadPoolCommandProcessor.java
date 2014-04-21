@@ -10,6 +10,7 @@ public class ThreadPoolCommandProcessor implements CommandProcessor {
 
     private Executor mExecutor;
     private DependencyInjector mDependencyInjector;
+
     private Map<Class, Object> mLoadedMap = new HashMap<Class, Object>();
     private Map<Class<? extends Command>, List<CommandListener>> mSubscriberMap = new HashMap<Class<? extends Command>, List<CommandListener>>();
     private List<Command> mDelayedResultCommands = new ArrayList<Command>();
@@ -58,8 +59,8 @@ public class ThreadPoolCommandProcessor implements CommandProcessor {
                         listener.commandComplete(command);
                     }
                 } catch (Exception e) {
+                    command.setError(e);
                     if (listener != null) {
-                        command.setError(e);
                         listener.commandFailed(command);
                     }
                 } finally {
@@ -93,10 +94,10 @@ public class ThreadPoolCommandProcessor implements CommandProcessor {
                     }
                 }
             }
-
-            if (foundCommand != null) {
-                mDelayedResultCommands.remove(foundCommand);
-            }
+//            TODO: since we are limiting the delayed commands, do we need to clean up here?
+//            if (foundCommand != null) {
+//                mDelayedResultCommands.remove(foundCommand);
+//            }
         }
     }
 
@@ -140,12 +141,10 @@ public class ThreadPoolCommandProcessor implements CommandProcessor {
                         listener.loadComplete(loadedData);
                     }
                 } catch (Exception e) {
+                    query.setError(e);
                     if (listener != null) {
-                        query.setError(e);
                         listener.loadFailed(query);
                     }
-                } finally {
-                    query.setFinished(true);
                 }
             }
         });
