@@ -7,9 +7,11 @@ import com.rosshambrick.commandroid.tests.mocks.MockExecutor;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.UUID;
+
 import static junit.framework.Assert.*;
 
-public class WhenCommandThrowsException implements CommandListener<Command> {
+public class WhenCommandFailsUsingDelayedListener implements CommandListener<Command> {
     private Command mFailedCommand;
     private Command mCompleteCommand;
 
@@ -22,7 +24,8 @@ public class WhenCommandThrowsException implements CommandListener<Command> {
                 throw new RuntimeException("Command error");
             }
         };
-        commandProcessor.send(command, this);
+        UUID id = commandProcessor.send(command);
+        commandProcessor.retryListener(id, this);
     }
 
     @Override
@@ -36,7 +39,7 @@ public class WhenCommandThrowsException implements CommandListener<Command> {
     }
 
     @Test
-    public void shouldPublishErrorEvent() {
+    public void shouldReturnFailedCommand() {
         assertNotNull(mFailedCommand);
 
         Exception error = mFailedCommand.getError();

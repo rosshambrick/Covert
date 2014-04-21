@@ -11,7 +11,7 @@ public class ThreadPoolCommandProcessor implements CommandProcessor {
     private Executor mExecutor;
     private DependencyInjector mDependencyInjector;
 
-    private Map<Class, Object> mLoadedMap = new HashMap<Class, Object>();
+    private Map<Class, Object> mQueryCache = new HashMap<Class, Object>();
     private Map<Class<? extends Command>, List<CommandListener>> mSubscriberMap = new HashMap<Class<? extends Command>, List<CommandListener>>();
     private List<Command> mDelayedResultCommands = new ArrayList<Command>();
 
@@ -59,6 +59,7 @@ public class ThreadPoolCommandProcessor implements CommandProcessor {
                         listener.commandComplete(command);
                     }
                 } catch (Exception e) {
+                    //TODO: add logging
                     command.setError(e);
                     if (listener != null) {
                         listener.commandFailed(command);
@@ -103,7 +104,7 @@ public class ThreadPoolCommandProcessor implements CommandProcessor {
 
     @Override
     public <T> void load(final Query<T> query, final LoadListener<T> listener) {
-        T cachedData = (T) mLoadedMap.get(query.getClass());
+        T cachedData = (T) mQueryCache.get(query.getClass());
         if (cachedData != null) {
             if (listener != null) {
                 listener.loadComplete(cachedData);
@@ -132,7 +133,7 @@ public class ThreadPoolCommandProcessor implements CommandProcessor {
             public void run() {
                 try {
                     T loadedData = query.loadInternal();
-                    mLoadedMap.put(query.getClass(), loadedData);
+                    mQueryCache.put(query.getClass(), loadedData);
 
                     //TODO:
                     // handle running this on the main thread
@@ -141,6 +142,7 @@ public class ThreadPoolCommandProcessor implements CommandProcessor {
                         listener.loadComplete(loadedData);
                     }
                 } catch (Exception e) {
+                    //TODO: add logging
                     query.setError(e);
                     if (listener != null) {
                         listener.loadFailed(query);

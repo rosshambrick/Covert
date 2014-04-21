@@ -10,7 +10,7 @@ import org.junit.Test;
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertTrue;
 
-public class WhenSendingACommandWithNoListener {
+public class WhenCommandCompletesWithNoListener {
     private Command mFirstCommand;
     private boolean mFirstCommandExecuted;
     private boolean mSecondCommandExecuted;

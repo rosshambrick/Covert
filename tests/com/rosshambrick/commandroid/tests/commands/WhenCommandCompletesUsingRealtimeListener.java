@@ -1,18 +1,16 @@
 package com.rosshambrick.commandroid.tests.commands;
 
 import com.rosshambrick.commandroid.CommandListener;
-import com.rosshambrick.commandroid.ThreadPoolCommandProcessor;
 import com.rosshambrick.commandroid.tests.mocks.MockCommand;
-import com.rosshambrick.commandroid.tests.mocks.MockDependencyInjector;
+import com.rosshambrick.commandroid.ThreadPoolCommandProcessor;
 import com.rosshambrick.commandroid.tests.mocks.MockExecutor;
+import com.rosshambrick.commandroid.tests.mocks.MockDependencyInjector;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.UUID;
-
 import static junit.framework.Assert.*;
 
-public class WhenSendingACommandWithListenerRetry implements CommandListener<MockCommand> {
+public class WhenCommandCompletesUsingRealtimeListener implements CommandListener<MockCommand> {
     private MockDependencyInjector mDependencyInjector;
     private MockExecutor mExecutor;
     private MockCommand mFirstCommand;
@@ -32,8 +30,7 @@ public class WhenSendingACommandWithListenerRetry implements CommandListener<Moc
 
         mSecondCommand = new MockCommand();
         mFirstCommand = new MockCommand(mSecondCommand);
-        UUID id = commandProcessor.send(mFirstCommand, null);
-        commandProcessor.retryListener(id, this);
+        commandProcessor.send(mFirstCommand, this);
     }
 
     @Override
