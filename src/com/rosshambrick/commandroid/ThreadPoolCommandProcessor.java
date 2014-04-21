@@ -7,7 +7,6 @@ import java.util.concurrent.Executors;
 @SuppressWarnings("ALL")
 public class ThreadPoolCommandProcessor implements CommandProcessor {
     public static final String TAG = "ThreadPoolCommandProcessor";
-//    private final Handler mUiThread;
 
     private Executor mExecutor;
     private DependencyInjector mDependencyInjector;
@@ -18,7 +17,6 @@ public class ThreadPoolCommandProcessor implements CommandProcessor {
     public ThreadPoolCommandProcessor(DependencyInjector dependencyInjector, Executor executor) {
         mExecutor = executor;
         mDependencyInjector = dependencyInjector;
-//        mUiThread = new Handler();
     }
 
     public ThreadPoolCommandProcessor(DependencyInjector dependencyInjector, int threads) {
@@ -57,27 +55,17 @@ public class ThreadPoolCommandProcessor implements CommandProcessor {
                 try {
                     command.executeInternal();
                     if (listener != null) {
-//                        mUiThread.post(new Runnable() {
-//                            @Override
-//                            public void run() {
-                                listener.commandComplete(command);
-//                            }
-//                        });
+                        listener.commandComplete(command);
                     }
                 } catch (Exception e) {
                     if (listener != null) {
                         command.setError(e);
-//                        mUiThread.post(new Runnable() {
-//                            @Override
-//                            public void run() {
-                                listener.commandFailed(command);
-//                            }
-//                        });
+                        listener.commandFailed(command);
                     }
                 } finally {
                     if (listener == null) {
-                        mDelayedResultCommands.add(command);
                         synchronized (mDelayedResultCommands) {
+                            mDelayedResultCommands.add(command);
                             if (mDelayedResultCommands.size() > 10) {
                                 mDelayedResultCommands.remove(0);
                             }
@@ -147,7 +135,7 @@ public class ThreadPoolCommandProcessor implements CommandProcessor {
 
                     //TODO:
                     // handle running this on the main thread
-                    // so the Fragment doesn't have to
+                    // so the Fragment doesn't have to?
                     if (listener != null) {
                         listener.loadComplete(loadedData);
                     }
@@ -162,15 +150,5 @@ public class ThreadPoolCommandProcessor implements CommandProcessor {
             }
         });
     }
-
-//    @Override
-//    public void registerForEvents(Object o) {
-//        mBus.register(o);
-//    }
-//
-//    @Override
-//    public void unregister(Object o) {
-//        mBus.unregister(o);
-//    }
 
 }
