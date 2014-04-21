@@ -59,30 +59,45 @@ public class UpdateAddress extends Command {
 		contact.setAddress(mNewAddress);
 		mRemoteContactsRepository.update(contact);
 		mLocalContactsRepository.update(contact);
-
-        mEventBus.post(new AddressUpdated(mContactId));
     }
 }
 ```
 
-### Run the Command from a Fragment
+### Run a Command from a Fragment
 ```
 public void onSaveClicked() {
 	String newAddress = mAddressTextView.getText().ToString();
-	mCommandProcessor.send(new UpdateAddressCommand(mContactId, newAddress));
+	mCommandProcessor.send(new UpdateAddressCommand(mContactId, newAddress), this);
 }
 ```
 
-### Handle Event(s) in a Fragment
+### Handle Result in a Fragment
 ```
-public void onEventMainThread(CommandError event) {
+public void commandComplete(UpdateAddress command) {
+	Toast.makeText(this, "Address updated successfully", Toast.LENGTH_LONG).show();
+}
+
+public void commandFailed(CommandError event) {
     String commandName = event.getCommand().getClass().getSimpleName();
     Toast.makeText(getActivity(), commandName + " command failed", Toast.LENGTH_LONG).show();
 }
+```
 
-public void onEventMainThread(AddressUpdated event) {
-	if (event.getContactId() == mContactId) {
-		Toast.makeText(this, "Address updated successfully", Toast.LENGTH_LONG).show();
-	}
+### Run a Query from a Fragment
+```
+public void onResume() {
+	mCommandProcessor.load(new ContactQuery(mContactId), this);
+}
+```
+
+### Handle Query result in a Fragment
+```
+public void loadComplete(Contact contact) {
+	display(contact);
+}
+
+public void loadFailed(ContactQuery query) {
+    String queryName = query.getClass().getSimpleName();
+    Toast.makeText(getActivity(), queryName + " query failed", Toast.LENGTH_LONG).show();
 }
 ```
