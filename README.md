@@ -1,21 +1,23 @@
-Commandroid
+Covert
 ===========
 
-Simplify async operations in your Android apps by letting Commandroid perform your background work and report back when interesting things have happened.  By adhearing to priniciples of DDD and taking advantage of CQRS, Commandroid gives you a clean and testable model layer by seperating the concerns of making changes in your model and querying the state of your model.
+Stop worrying about blocking the UI thread and let Covert perform all model opperations in the background, reporting back when the work is done.
 
-### Features
-* All non-UI work goes into POJO commands that are easily testable
-* Never worry again about blocking the UI thread when doing disk or network I/O
-* Simple and fast
-* Can run commands either in parrellel or serial
-* Configure number of threads.  [Defaults to single thread]
-* EventBus for eventing
-    * Bundled by default
-    * Configure with your own EventBus instance
-    * Handle data cacheing by using sticky events
 
-### Dagger setup
+## Features
+* All Commands and Queries run on a background thread
+* Commands and Queries are easy to test since they are just POJOs
+* Can run either in parrellel or serially 
+* Queries are automatically cached globally
+* Easily configure number of threads in threadpool.  [Defaults to one background thread]
+* Designed to work well with Otto/EventBus for decoupled pub/sub
+* Designed to work well with Dagger/RoboGuice for dependency injection
+
+
+## Setup (Dagger or RoboGuice)
 ```
+    //inside module
+    
     @Provides @Singleton
     DependencyInjector provideInjector() {
         return new DependencyInjector() {
@@ -27,18 +29,18 @@ Simplify async operations in your Android apps by letting Commandroid perform yo
     }
 
     @Provides @Singleton
-    CommandProcessor provideCommandProcessor(DependencyInjector dependencyInjector) {
-        return new ThreadPoolCommandProcessor(dependencyInjector);
+    Covert provideCovert(DependencyInjector dependencyInjector) {
+        return new CovertAgent(dependencyInjector);
     }
 
 ```
 
-
-### Define a Command
+##Commands
+#### Define a Command
 ```
 public class UpdateAddress extends Command {
-    @Inject ContactsRepository mLocalContactsRepository;
-    @Inject RemoteContactsRepository mRemoteContactsRepository;
+    @Inject LocalDatabase mLocalDatabase;
+    @Inject WebService mWebService;
     
     private long mContactId;
     private String mNewAddress;
@@ -48,8 +50,9 @@ public class UpdateAddress extends Command {
 		mNewAddress = newAddress;
 	}
 
-    public void execute() {
-        Contact contact = mContactsRepository.findById(mContactId);
+	//runs on a background thread
+    public void execute() {  
+        Contact contact = mLocalDatabase.findById(mContactId);
 
 		if (contact.getAddress().equals(mNewAddress)) {
 			//nothing to do
@@ -57,21 +60,21 @@ public class UpdateAddress extends Command {
 		}
 		
 		contact.setAddress(mNewAddress);
-		mRemoteContactsRepository.update(contact);
-		mLocalContactsRepository.update(contact);
+		mWebService.update(contact);  //network I/O
+		mLocalDatabase.update(contact);  //disk I/O
     }
 }
 ```
 
-### Run a Command from a Fragment
+### Running a Command
 ```
 public void onSaveClicked() {
 	String newAddress = mAddressTextView.getText().ToString();
-	mCommandProcessor.send(new UpdateAddressCommand(mContactId, newAddress), this);
+	mCovert.send(new UpdateAddressCommand(mContactId, newAddress), this);
 }
 ```
 
-### Handle Result in a Fragment
+### Handling the result
 ```
 public void commandComplete(UpdateAddress command) {
 	Toast.makeText(this, "Address updated successfully", Toast.LENGTH_LONG).show();
@@ -83,21 +86,44 @@ public void commandFailed(CommandError event) {
 }
 ```
 
-### Run a Query from a Fragment
+##Queries
+### Defining a Query
 ```
-public void onResume() {
-	mCommandProcessor.load(new ContactQuery(mContactId), this);
+public class ContactQuery extends Query<Contact> {
+    @Inject LocalDatabase mLocalDatabase;
+    @Inject WebService mWebService;
+    
+    private long mContactId;
+
+	public ContactQuery(long contactId) {
+		mContactId = contactId;
+	}
+
+	//runs on a background thread
+    public Contact load() {  
+        Contact contact = mLocalDatabase.findById(mContactId); //disk I/O
+		if (contact == null) {			
+			contact = mWebService.findById(mContactId); //network I/O
+		}		
+		return contact;
+    }
 }
 ```
 
-### Handle Query result in a Fragment
+### Running a Query
+```
+public void onResume() {
+	mCovert.load(new ContactQuery(mContactId), this); //returns immediately if cached
+}
+```
+
+### Handling the result
 ```
 public void loadComplete(Contact contact) {
 	display(contact);
 }
 
 public void loadFailed(ContactQuery query) {
-    String queryName = query.getClass().getSimpleName();
-    Toast.makeText(getActivity(), queryName + " query failed", Toast.LENGTH_LONG).show();
+    Toast.makeText(getActivity(), query.getError().getMessage(), Toast.LENGTH_LONG).show();
 }
 ```
