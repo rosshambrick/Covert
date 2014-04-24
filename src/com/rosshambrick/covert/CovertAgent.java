@@ -1,8 +1,13 @@
 package com.rosshambrick.covert;
 
-import java.util.*;
+import android.os.Handler;
+
+import java.lang.ref.WeakReference;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicLong;
 
 @SuppressWarnings("ALL")
 public class CovertAgent implements Covert {
@@ -12,24 +17,25 @@ public class CovertAgent implements Covert {
     private DependencyInjector mDependencyInjector;
 
     private Map<Class, Object> mQueryCache = new HashMap<Class, Object>();
-    private Map<Class<? extends Command>, List<CommandListener>> mSubscriberMap = new HashMap<Class<? extends Command>, List<CommandListener>>();
-    private List<Command> mDelayedResultCommands = new ArrayList<Command>();
+    private UiThread mUiThread;
+    private AtomicLong mCommandsRunning = new AtomicLong(0);
 
-    public CovertAgent(DependencyInjector dependencyInjector, Executor executor) {
+    public CovertAgent(DependencyInjector dependencyInjector, Executor executor, UiThread uiThread) {
         mExecutor = executor;
         mDependencyInjector = dependencyInjector;
+        mUiThread = uiThread;
     }
 
     public CovertAgent(DependencyInjector dependencyInjector, int threads) {
-        this(dependencyInjector, Executors.newFixedThreadPool(threads));
+        this(dependencyInjector, Executors.newFixedThreadPool(threads), new LiveHandler());
     }
 
     public CovertAgent(Executor executor) {
-        this(null, executor);
+        this(null, executor, null);
     }
 
     public CovertAgent(DependencyInjector dependencyInjector) {
-        this(dependencyInjector, Executors.newSingleThreadExecutor());
+        this(dependencyInjector, Executors.newSingleThreadExecutor(), null);
     }
 
     public CovertAgent() {
@@ -37,73 +43,57 @@ public class CovertAgent implements Covert {
     }
 
     @Override
-    public UUID send(final Command command) {
-        return send(command, null);
+    public void send(final Command command) {
+        send(command, null);
     }
 
     @Override
-    public UUID send(final Command command, final CommandListener listener) {
+    public <T extends Command> void send(final T command, CommandListener<T> listener) {
+        mCommandsRunning.incrementAndGet();
         command.setCovert(this);
-        command.setId(UUID.randomUUID());
+
+        WeakReference<CommandListener<T>> weakListener = null;
+        if (listener != null) {
+            weakListener = new WeakReference<CommandListener<T>>(listener);
+        }
 
         if (mDependencyInjector != null) {
             mDependencyInjector.inject(command);
         }
+
+        final WeakReference<CommandListener<T>> finalWeakListener = weakListener;
 
         mExecutor.execute(new Runnable() {
             @Override
             public void run() {
                 try {
                     command.executeInternal();
-                    if (listener != null) {
-                        listener.commandComplete(command);
-                    }
+                    command.setSuccess(true);
                 } catch (Exception e) {
                     //TODO: add logging
                     command.setError(e);
-                    if (listener != null) {
-                        listener.commandFailed(command);
-                    }
                 } finally {
-                    if (listener == null) {
-                        synchronized (mDelayedResultCommands) {
-                            mDelayedResultCommands.add(command);
-                            if (mDelayedResultCommands.size() > 10) {
-                                mDelayedResultCommands.remove(0);
+                    command.setComplete(true);
+                    mCommandsRunning.decrementAndGet();
+                    if (finalWeakListener != null && finalWeakListener.get() != null) {
+                        mUiThread.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                if (finalWeakListener.get() != null) {
+                                    finalWeakListener.get().commandComplete(command);
+                                }
                             }
-                        }
+                        });
                     }
                 }
             }
         });
 
-        return command.getId();
+        return;
     }
 
     @Override
-    public void retryListener(UUID commandId, CommandListener listener) {
-        synchronized (mDelayedResultCommands) {
-            Command foundCommand = null;
-
-            for (Command command : mDelayedResultCommands) {
-                if (command.getId().equals(commandId)) {
-                    foundCommand = command;
-                    if (command.getError() == null) {
-                        listener.commandComplete(command);
-                    } else {
-                        listener.commandFailed(command);
-                    }
-                }
-            }
-//            TODO: since we are limiting the delayed commands, do we need to clean up here?
-//            if (foundCommand != null) {
-//                mDelayedResultCommands.remove(foundCommand);
-//            }
-        }
-    }
-
-    @Override
-    public <T> void load(final Query<T> query, final LoadListener<T> listener) {
+    public <T extends Query> void load(final T query, final LoadListener<T> listener) {
         T cachedData = (T) mQueryCache.get(query.getClass());
         if (cachedData != null) {
             if (listener != null) {
@@ -115,41 +105,66 @@ public class CovertAgent implements Covert {
     }
 
     @Override
-    public <T> void load(Query<T> query) {
+    public <T extends Query> void load(T query) {
         load(query, null);
     }
 
     @Override
-    public <T> void reload(Query<T> query, LoadListener<T> listener) {
+    public <T extends Query> void reload(T query, LoadListener<T> listener) {
         doLoad(query, listener);
     }
 
-    private <T> void doLoad(final Query<T> query, final LoadListener<T> listener) {
+    @Override
+    public long commandsRunning() {
+        return mCommandsRunning.longValue();
+    }
+
+    private <T extends Query> void doLoad(final T query, LoadListener<T> listener) {
+        mCommandsRunning.incrementAndGet();
+
         if (mDependencyInjector != null) {
             mDependencyInjector.inject(query);
         }
+
+        WeakReference<LoadListener<T>> weakListener = null;
+        if (listener != null) {
+            weakListener = new WeakReference<LoadListener<T>>(listener);
+        }
+
+        final WeakReference<LoadListener<T>> finalWeakListener = weakListener;
+
         mExecutor.execute(new Runnable() {
             @Override
             public void run() {
                 try {
-                    T loadedData = query.loadInternal();
-                    mQueryCache.put(query.getClass(), loadedData);
-
-                    //TODO:
-                    // handle running this on the main thread
-                    // so the Fragment doesn't have to?
-                    if (listener != null) {
-                        listener.loadComplete(loadedData);
-                    }
+                    query.loadInternal();
+                    mQueryCache.put(query.getClass(), query);
+                    query.setSuccess(true);
                 } catch (Exception e) {
-                    //TODO: add logging
                     query.setError(e);
-                    if (listener != null) {
-                        listener.loadFailed(query);
+                } finally {
+                    mCommandsRunning.decrementAndGet();
+                    if (finalWeakListener != null && finalWeakListener.get() != null) {
+                        mUiThread.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                if (finalWeakListener.get() != null) {
+                                    finalWeakListener.get().loadComplete(query);
+                                }
+                            }
+                        });
                     }
                 }
             }
         });
     }
 
+    private static class LiveHandler implements UiThread {
+        private Handler mHandler = new Handler();
+
+        @Override
+        public void post(Runnable runnable) {
+            mHandler.post(runnable);
+        }
+    }
 }

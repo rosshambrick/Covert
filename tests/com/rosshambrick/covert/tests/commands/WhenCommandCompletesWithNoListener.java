@@ -1,7 +1,7 @@
 package com.rosshambrick.covert.tests.commands;
 
 import com.rosshambrick.covert.Command;
-import com.rosshambrick.covert.CoverAgent;
+import com.rosshambrick.covert.CovertAgent;
 import com.rosshambrick.covert.tests.mocks.MockDependencyInjector;
 import com.rosshambrick.covert.tests.mocks.MockExecutor;
 import org.junit.Before;
@@ -23,10 +23,10 @@ public class WhenCommandCompletesWithNoListener {
         mDependencyInjector = new MockDependencyInjector();
 
         mExecutor = new MockExecutor();
-        CoverAgent commandProcessor = new CoverAgent(
+        CovertAgent commandProcessor = new CovertAgent(
                 mDependencyInjector,
-                mExecutor
-        );
+                mExecutor,
+                null);
 
         mSecondCommand = new Command() {
             @Override

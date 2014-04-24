@@ -11,37 +11,27 @@
 //
 //import static junit.framework.Assert.*;
 //
-//public class WhenCommandCompletesUsingDelayedListener implements CommandListener<MockCommand> {
+//public class WhenCommandCompletesAfterRotation implements CommandListener<MockCommand> {
 //    private MockDependencyInjector mDependencyInjector;
 //    private MockExecutor mExecutor;
 //    private MockCommand mFirstCommand;
 //    private MockCommand mSecondCommand;
 //    private MockCommand mSuccessCommand;
-//    private MockCommand mFirstListenerCommand;
+//    private MockCommand mErrorCommand;
 //
 //    @Before
 //    public void setup() {
 //        mDependencyInjector = new MockDependencyInjector();
 //
 //        mExecutor = new MockExecutor();
-//        CovertAgent covertAgent = new CovertAgent(
+//        CovertAgent commandProcessor = new CovertAgent(
 //                mDependencyInjector,
 //                mExecutor,
 //                new MockUiThread());
 //
 //        mSecondCommand = new MockCommand();
 //        mFirstCommand = new MockCommand(mSecondCommand);
-//        mFirstCommand.setId(1);
-//        covertAgent.send(mFirstCommand, new FirstListener());
-////        covertAgent.resetListener(1, this);
-////        covertAgent.send(mFirstCommand);
-//    }
-//
-//    private class FirstListener implements CommandListener<MockCommand> {
-//        @Override
-//        public void commandComplete(MockCommand command) {
-//            mFirstListenerCommand = command;
-//        }
+//        commandProcessor.send(mFirstCommand, this);
 //    }
 //
 //    @Override
@@ -75,8 +65,8 @@
 //    }
 //
 //    @Test
-//    public void shouldNotReturnToFirstListener() {
-//        assertNull(mFirstListenerCommand);
+//    public void shouldNotReturnErrorResult() {
+//        assertNull(mErrorCommand);
 //    }
 //
 //    @Test
@@ -84,4 +74,5 @@
 //        assertEquals(mFirstCommand, mDependencyInjector.get(0));
 //        assertEquals(mSecondCommand, mDependencyInjector.get(1));
 //    }
+//
 //}

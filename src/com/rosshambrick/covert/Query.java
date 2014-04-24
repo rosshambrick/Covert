@@ -1,16 +1,26 @@
 package com.rosshambrick.covert;
 
-public abstract class Query<T> extends AsyncMessage {
+public abstract class Query<TData> extends CovertMessage {
 
-    protected abstract T load();
+    private TData mData;
 
-    public final T loadInternal() {
+    protected abstract TData load();
+
+    public final void loadInternal() {
         if (isCanceled()) {
             //TODO: post a CommandCanceled event?
-            return null;
+            return;
         }
 
-        return load();
+        TData data = load();
+        setData(data);
     }
 
+    public TData getResult() {
+        return mData;
+    }
+
+    public void setData(TData data) {
+        mData = data;
+    }
 }

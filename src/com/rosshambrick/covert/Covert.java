@@ -1,18 +1,13 @@
 package com.rosshambrick.covert;
 
-import java.util.UUID;
-
 public interface Covert {
     //commands
-    UUID send(Command command);
-    UUID send(Command command, CommandListener listener);
-    void retryListener(UUID commandId, CommandListener listener);
+    void send(Command command);
+    <T extends Command> void send(final T command, CommandListener<T> listener);
 
-    <T> void load(Query<T> query, LoadListener<T> listener);
-    <T> void load(Query<T> query);
-    <T> void reload(Query<T> query, LoadListener<T> listener);
+    <T extends Query> void load(T query, LoadListener<T> listener);
+    <T extends Query> void load(T query);
+    <T extends Query> void reload(T query, LoadListener<T> listener);
 
-
-//    void registerForEvents(Object o);
-//    void unregister(Object o);
+    long commandsRunning();
 }

@@ -1,26 +1,14 @@
 package com.rosshambrick.covert;
 
-import java.util.UUID;
-
-@SuppressWarnings("ALL")
-public abstract class Command extends AsyncMessage {
-
-    private UUID mId;
-
+public abstract class Command extends CovertMessage {
     protected abstract void execute();
 
     public final void executeInternal() {
         if (isCanceled()) {
-            //TODO: post a CommandCanceled event?
+            //TODO: return CommandCanceled event?
             return;
         }
-
-//        try {
-            execute();
-//        } catch (Exception e) {
-            //TODO: evaluate if a retry would be useful
-//            mBus.publish(new AsyncMessageError(this, e));
-//        }
+        execute();
     }
 
     //TODO: figure out if we want to encourage sending more commands or not
@@ -28,11 +16,7 @@ public abstract class Command extends AsyncMessage {
         mCovert.send(command);
     }
 
-    public void setId(UUID id) {
-        mId = id;
-    }
-
-    public UUID getId() {
-        return mId;
+    public boolean isComplete() {
+        return mComplete;
     }
 }

@@ -1,16 +1,17 @@
 package com.rosshambrick.covert.tests.commands;
 
+import com.rosshambrick.commandroid.tests.mocks.MockUiThread;
 import com.rosshambrick.covert.CommandListener;
+import com.rosshambrick.covert.CovertAgent;
 import com.rosshambrick.covert.tests.mocks.MockCommand;
-import com.rosshambrick.covert.CoverAgent;
-import com.rosshambrick.covert.tests.mocks.MockExecutor;
 import com.rosshambrick.covert.tests.mocks.MockDependencyInjector;
+import com.rosshambrick.covert.tests.mocks.MockExecutor;
 import org.junit.Before;
 import org.junit.Test;
 
 import static junit.framework.Assert.*;
 
-public class WhenCommandCompletesUsingRealtimeListener implements CommandListener<MockCommand> {
+public class WhenCommandCompletesUsingListener implements CommandListener<MockCommand> {
     private MockDependencyInjector mDependencyInjector;
     private MockExecutor mExecutor;
     private MockCommand mFirstCommand;
@@ -23,10 +24,10 @@ public class WhenCommandCompletesUsingRealtimeListener implements CommandListene
         mDependencyInjector = new MockDependencyInjector();
 
         mExecutor = new MockExecutor();
-        CoverAgent commandProcessor = new CoverAgent(
+        CovertAgent commandProcessor = new CovertAgent(
                 mDependencyInjector,
-                mExecutor
-        );
+                mExecutor,
+                new MockUiThread());
 
         mSecondCommand = new MockCommand();
         mFirstCommand = new MockCommand(mSecondCommand);
@@ -38,10 +39,10 @@ public class WhenCommandCompletesUsingRealtimeListener implements CommandListene
         mSuccessCommand = command;
     }
 
-    @Override
-    public void commandFailed(MockCommand command) {
-        mErrorCommand = command;
-    }
+//    @Override
+//    public void commandFailed(MockCommand command) {
+//        mErrorCommand = command;
+//    }
 
 
     @Test

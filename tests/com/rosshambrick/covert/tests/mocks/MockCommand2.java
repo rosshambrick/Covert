@@ -2,16 +2,15 @@ package com.rosshambrick.covert.tests.mocks;
 
 import com.rosshambrick.covert.Command;
 
-public class MockCommand extends Command {
-
+public class MockCommand2 extends Command {
     private boolean mCommandExecuted;
-    private MockCommand mNextCommand;
+    private MockCommand2 mNextCommand;
 
-    public MockCommand(MockCommand nextCommand) {
+    public MockCommand2(MockCommand2 nextCommand) {
         mNextCommand = nextCommand;
     }
 
-    public MockCommand() {
+    public MockCommand2() {
 
     }
 
