@@ -19,4 +19,8 @@ public abstract class Command extends CovertMessage {
     public boolean isComplete() {
         return mComplete;
     }
+
+    protected void reload(Query query) {
+        mCovert.reload(query);
+    }
 }

@@ -4,6 +4,7 @@ import android.os.Handler;
 
 import java.lang.ref.WeakReference;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
@@ -19,6 +20,7 @@ public class CovertAgent implements Covert {
     private Map<Class, Object> mQueryCache = new HashMap<Class, Object>();
     private UiThread mUiThread;
     private AtomicLong mCommandsRunning = new AtomicLong(0);
+    private Map<Class<? extends Query>, HashSet<WeakReference<LoadListener>>> mLoadListenerMap = new HashMap<Class<? extends Query>, HashSet<WeakReference<LoadListener>>>();
 
     public CovertAgent(DependencyInjector dependencyInjector, Executor executor, UiThread uiThread) {
         mExecutor = executor;
@@ -94,13 +96,26 @@ public class CovertAgent implements Covert {
 
     @Override
     public <T extends Query> void load(final T query, final LoadListener<T> listener) {
-        T cachedData = (T) mQueryCache.get(query.getClass());
+        Class<? extends Query> clazz = query.getClass();
+
+        register(clazz, listener);
+
+        T cachedData = (T) mQueryCache.get(clazz);
         if (cachedData != null) {
             if (listener != null) {
                 listener.loadComplete(cachedData);
             }
         } else {
-            doLoad(query, listener);
+            doLoad(query);
+        }
+    }
+
+    private <T extends Query> void register(Class<? extends Query> clazz, LoadListener<T> listener) {
+        if (listener != null) {
+            if (!mLoadListenerMap.containsKey(clazz)) {
+                mLoadListenerMap.put(clazz, new HashSet<WeakReference<LoadListener>>());
+            }
+            mLoadListenerMap.get(clazz).add(new WeakReference<LoadListener>(listener));
         }
     }
 
@@ -111,27 +126,21 @@ public class CovertAgent implements Covert {
 
     @Override
     public <T extends Query> void reload(T query, LoadListener<T> listener) {
-        doLoad(query, listener);
+        register(query.getClass(), listener);
+        doLoad(query);
     }
 
     @Override
-    public long commandsRunning() {
-        return mCommandsRunning.longValue();
+    public <T extends Query> void reload(T query) {
+        doLoad(query);
     }
 
-    private <T extends Query> void doLoad(final T query, LoadListener<T> listener) {
+    private <T extends Query> void doLoad(final T query) {
         mCommandsRunning.incrementAndGet();
 
         if (mDependencyInjector != null) {
             mDependencyInjector.inject(query);
         }
-
-        WeakReference<LoadListener<T>> weakListener = null;
-        if (listener != null) {
-            weakListener = new WeakReference<LoadListener<T>>(listener);
-        }
-
-        final WeakReference<LoadListener<T>> finalWeakListener = weakListener;
 
         mExecutor.execute(new Runnable() {
             @Override
@@ -144,19 +153,24 @@ public class CovertAgent implements Covert {
                     query.setError(e);
                 } finally {
                     mCommandsRunning.decrementAndGet();
-                    if (finalWeakListener != null && finalWeakListener.get() != null) {
-                        mUiThread.post(new Runnable() {
-                            @Override
-                            public void run() {
-                                if (finalWeakListener.get() != null) {
-                                    finalWeakListener.get().loadComplete(query);
+                    mUiThread.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            for (WeakReference<LoadListener> listener : mLoadListenerMap.get(query.getClass())) {
+                                if (listener.get() != null) {
+                                    listener.get().loadComplete(query);
                                 }
                             }
-                        });
-                    }
+                        }
+                    });
                 }
             }
         });
+    }
+
+    @Override
+    public long commandsRunning() {
+        return mCommandsRunning.longValue();
     }
 
     private static class LiveHandler implements UiThread {
