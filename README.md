@@ -66,7 +66,7 @@ public class UpdateAddress extends Command {
 }
 ```
 
-### Running a Command
+### Run it
 ```
 public void onSaveClicked() {
 	String newAddress = mAddressTextView.getText().ToString();
@@ -74,20 +74,21 @@ public void onSaveClicked() {
 }
 ```
 
-### Handling the result
+### Handling result 
+(NOTE: use retained fragments to guarantee result delivery)
+
 ```
 public void commandComplete(UpdateAddress command) {
-	Toast.makeText(this, "Address updated successfully", Toast.LENGTH_LONG).show();
-}
-
-public void commandFailed(CommandError event) {
-    String commandName = event.getCommand().getClass().getSimpleName();
-    Toast.makeText(getActivity(), commandName + " command failed", Toast.LENGTH_LONG).show();
+	if (command.isSuccess()) {
+		Toast.makeText(this, "Address updated successfully", Toast.LENGTH_LONG).show();
+	} else {
+		Toast.makeText(this, "Address update failed", Toast.LENGTH_LONG).show();
+	}
 }
 ```
 
 ##Queries
-### Defining a Query
+### Define a Query
 ```
 public class ContactQuery extends Query<Contact> {
     @Inject LocalDatabase mLocalDatabase;
@@ -104,26 +105,24 @@ public class ContactQuery extends Query<Contact> {
         Contact contact = mLocalDatabase.findById(mContactId); //disk I/O
 		if (contact == null) {			
 			contact = mWebService.findById(mContactId); //network I/O
+			mLocalDatabase.add(contact);  //disk I/O
 		}		
 		return contact;
     }
 }
 ```
 
-### Running a Query
+### Run it
 ```
 public void onResume() {
 	mCovert.load(new ContactQuery(mContactId), this); //returns immediately if cached
 }
 ```
 
-### Handling the result
+### Handle result
 ```
-public void loadComplete(Contact contact) {
+public void loadComplete(ContactQuery query) {
+	Contact contact = query.getResult();
 	display(contact);
-}
-
-public void loadFailed(ContactQuery query) {
-    Toast.makeText(getActivity(), query.getError().getMessage(), Toast.LENGTH_LONG).show();
 }
 ```
