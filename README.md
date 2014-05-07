@@ -1,7 +1,7 @@
 Covert
 ===========
 
-Stop worrying about blocking the UI thread and let Covert perform all model opperations in the background, reporting back when the work is done.
+Stop worrying about blocking the UI thread and let Covert perform all model operations in the background, reporting back when the work is done.
 
 
 ## Features
@@ -80,9 +80,9 @@ public void onSaveClicked() {
 ```
 public void commandComplete(UpdateAddress command) {
 	if (command.isSuccess()) {
-		Toast.makeText(this, "Address updated successfully", Toast.LENGTH_LONG).show();
+		Toast.makeText(getActivity(), "Address updated successfully", Toast.LENGTH_LONG).show();
 	} else {
-		Toast.makeText(this, "Address update failed", Toast.LENGTH_LONG).show();
+		Toast.makeText(getActivity(), "Address update failed", Toast.LENGTH_LONG).show();
 	}
 }
 ```
