@@ -1,4 +1,4 @@
-package com.rosshambrick.commandroid.tests.mocks;
+package com.rosshambrick.covert.tests.mocks;
 
 import com.rosshambrick.covert.UiThread;
 

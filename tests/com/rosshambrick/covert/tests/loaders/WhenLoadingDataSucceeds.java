@@ -1,9 +1,9 @@
 package com.rosshambrick.covert.tests.loaders;
 
-import com.rosshambrick.commandroid.tests.mocks.MockUiThread;
+import com.rosshambrick.covert.tests.mocks.MockUiThread;
 import com.rosshambrick.covert.CovertAgent;
 import com.rosshambrick.covert.LoadListener;
-import com.rosshambrick.covert.tests.mocks.CitiesQuery;
+import com.rosshambrick.covert.tests.messages.AllCitiesQuery;
 import com.rosshambrick.covert.tests.mocks.MockExecutor;
 import org.junit.Before;
 import org.junit.Test;
@@ -12,29 +12,29 @@ import java.util.List;
 
 import static junit.framework.Assert.*;
 
-public class WhenLoadingDataSucceeds implements LoadListener<CitiesQuery> {
-    private CitiesQuery mCitiesQuery;
+public class WhenLoadingDataSucceeds implements LoadListener<AllCitiesQuery> {
+    private AllCitiesQuery mAllCitiesQuery;
     private MockExecutor mExecutor;
 
     @Before
     public void setup() {
         mExecutor = new MockExecutor();
         CovertAgent commandProcessor = new CovertAgent(null, mExecutor, new MockUiThread());
-        commandProcessor.load(new CitiesQuery(), this);
-        commandProcessor.load(new CitiesQuery(), this);
-        commandProcessor.load(new CitiesQuery());
-        commandProcessor.reload(new CitiesQuery(), this);
+        commandProcessor.load(new AllCitiesQuery(), this);
+        commandProcessor.load(new AllCitiesQuery(), this);
+        commandProcessor.load(new AllCitiesQuery());
+        commandProcessor.reload(new AllCitiesQuery(), this);
     }
 
     @Override
-    public void loadComplete(CitiesQuery query) {
-        mCitiesQuery = query;
+    public void loadComplete(AllCitiesQuery query) {
+        mAllCitiesQuery = query;
     }
 
     @Test
     public void shouldHaveCachedData() {
-        assertNotNull(mCitiesQuery);
-        List<String> cities = mCitiesQuery.getResult();
+        assertNotNull(mAllCitiesQuery);
+        List<String> cities = mAllCitiesQuery.getResult();
         assertEquals(3, cities.size());
         assertEquals("Atlanta", cities.get(0));
     }
@@ -46,6 +46,6 @@ public class WhenLoadingDataSucceeds implements LoadListener<CitiesQuery> {
 
     @Test
     public void shouldNotReturnAFailedQuery() {
-        assertNull(mCitiesQuery.getError());
+        assertNull(mAllCitiesQuery.getError());
     }
 }

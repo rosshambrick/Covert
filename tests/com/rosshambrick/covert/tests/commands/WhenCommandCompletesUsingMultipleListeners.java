@@ -1,6 +1,6 @@
 package com.rosshambrick.covert.tests.commands;
 
-import com.rosshambrick.commandroid.tests.mocks.MockUiThread;
+import com.rosshambrick.covert.tests.mocks.MockUiThread;
 import com.rosshambrick.covert.CommandListener;
 import com.rosshambrick.covert.CovertAgent;
 import com.rosshambrick.covert.UiThread;

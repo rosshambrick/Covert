@@ -1,16 +1,18 @@
 package com.rosshambrick.covert.tests.commands;
 
-import com.rosshambrick.commandroid.tests.mocks.MockUiThread;
+import com.rosshambrick.covert.tests.messages.ReloadCommand;
+import com.rosshambrick.covert.tests.mocks.MockUiThread;
 import com.rosshambrick.covert.CommandListener;
 import com.rosshambrick.covert.CovertAgent;
 import com.rosshambrick.covert.LoadListener;
 import com.rosshambrick.covert.tests.mocks.*;
+import com.rosshambrick.covert.tests.messages.AllCitiesQuery;
 import org.junit.Before;
 import org.junit.Test;
 
 import static junit.framework.Assert.assertEquals;
 
-public class WhenCommandReloadsQuery implements LoadListener<CitiesQuery>,CommandListener<ReloadCommand> {
+public class WhenCommandReloadsQuery implements LoadListener<AllCitiesQuery>,CommandListener<ReloadCommand> {
     private int mNumLoads;
 
     @Before
@@ -21,14 +23,14 @@ public class WhenCommandReloadsQuery implements LoadListener<CitiesQuery>,Comman
                 new MockExecutor(),
                 new MockUiThread());
 
-        covertAgent.load(new CitiesQuery(), this);
+        covertAgent.load(new AllCitiesQuery(), this);
 
         covertAgent.send(new ReloadCommand(), this);
     }
 
 
     @Override
-    public void loadComplete(CitiesQuery data) {
+    public void loadComplete(AllCitiesQuery data) {
         mNumLoads++;
     }
 

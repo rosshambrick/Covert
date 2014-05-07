@@ -12,7 +12,6 @@ import java.util.concurrent.atomic.AtomicLong;
 
 @SuppressWarnings("ALL")
 public class CovertAgent implements Covert {
-    public static final String TAG = "ThreadPoolCommandProcessor";
 
     private Executor mExecutor;
     private DependencyInjector mDependencyInjector;
@@ -50,20 +49,20 @@ public class CovertAgent implements Covert {
     }
 
     @Override
-    public <T extends Command> void send(final T command, CommandListener<T> listener) {
+    public <TCommand extends Command> void send(final TCommand command, CommandListener<TCommand> listener) {
         mCommandsRunning.incrementAndGet();
         command.setCovert(this);
 
-        WeakReference<CommandListener<T>> weakListener = null;
+        WeakReference<CommandListener<TCommand>> weakListener = null;
         if (listener != null) {
-            weakListener = new WeakReference<CommandListener<T>>(listener);
+            weakListener = new WeakReference<CommandListener<TCommand>>(listener);
         }
 
         if (mDependencyInjector != null) {
             mDependencyInjector.inject(command);
         }
 
-        final WeakReference<CommandListener<T>> finalWeakListener = weakListener;
+        final WeakReference<CommandListener<TCommand>> finalWeakListener = weakListener;
 
         mExecutor.execute(new Runnable() {
             @Override
@@ -95,22 +94,22 @@ public class CovertAgent implements Covert {
     }
 
     @Override
-    public <T extends Query> void load(final T query, final LoadListener<T> listener) {
+    public <TData, TQuery extends Query<TData>> void load(final TQuery query, final LoadListener<TQuery> listener) {
         Class<? extends Query> clazz = query.getClass();
 
         register(clazz, listener);
 
-        T cachedData = (T) mQueryCache.get(clazz);
+        TQuery cachedData = (TQuery) mQueryCache.get(clazz);
         if (cachedData != null) {
             if (listener != null) {
                 listener.loadComplete(cachedData);
             }
         } else {
-            doLoad(query);
+            queueLoad(query);
         }
     }
 
-    private <T extends Query> void register(Class<? extends Query> clazz, LoadListener<T> listener) {
+    private <TData, TQuery extends Query<TData>> void register(Class<? extends Query> clazz, LoadListener<TQuery> listener) {
         if (listener != null) {
             if (!mLoadListenerMap.containsKey(clazz)) {
                 mLoadListenerMap.put(clazz, new HashSet<WeakReference<LoadListener>>());
@@ -120,23 +119,25 @@ public class CovertAgent implements Covert {
     }
 
     @Override
-    public <T extends Query> void load(T query) {
+    public <TData, TQuery extends Query<TData>> void load(TQuery query) {
         load(query, null);
     }
 
     @Override
-    public <T extends Query> void reload(T query, LoadListener<T> listener) {
+    public <TData, TQuery extends Query<TData>> void reload(TQuery query, LoadListener<TQuery> listener) {
         register(query.getClass(), listener);
-        doLoad(query);
+        queueLoad(query);
     }
 
     @Override
-    public <T extends Query> void reload(T query) {
-        doLoad(query);
+    public <TData, TQuery extends Query<TData>> void reload(TQuery query) {
+        queueLoad(query);
     }
 
-    private <T extends Query> void doLoad(final T query) {
+    private <TData, TQuery extends Query<TData>> void queueLoad(final TQuery query) {
         mCommandsRunning.incrementAndGet();
+
+        query.setCovert(this);
 
         if (mDependencyInjector != null) {
             mDependencyInjector.inject(query);
@@ -145,32 +146,45 @@ public class CovertAgent implements Covert {
         mExecutor.execute(new Runnable() {
             @Override
             public void run() {
-                try {
-                    query.loadInternal();
-                    mQueryCache.put(query.getClass(), query);
-                    query.setSuccess(true);
-                } catch (Exception e) {
-                    query.setError(e);
-                } finally {
-                    mCommandsRunning.decrementAndGet();
-                    mUiThread.post(new Runnable() {
-                        @Override
-                        public void run() {
-                            for (WeakReference<LoadListener> listener : mLoadListenerMap.get(query.getClass())) {
-                                if (listener.get() != null) {
-                                    listener.get().loadComplete(query);
-                                }
+                doLoad(query);
+                mCommandsRunning.decrementAndGet();
+                mUiThread.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        HashSet<WeakReference<LoadListener>> weakListeners = mLoadListenerMap.get(query.getClass());
+                        for (WeakReference<LoadListener> listener : weakListeners) {
+                            if (listener.get() != null) {
+                                listener.get().loadComplete(query);
+                            } else {
+                                weakListeners.remove(listener);
                             }
                         }
-                    });
-                }
+                    }
+                });
             }
         });
+    }
+
+    private <TData, TQuery extends Query<TData>> void doLoad(final TQuery query) {
+        try {
+            query.loadInternal();
+            mQueryCache.put(query.getClass(), query);
+            query.setSuccess(true);
+        } catch (Exception e) {
+            query.setError(e);
+            query.setSuccess(true);
+        }
     }
 
     @Override
     public long commandsRunning() {
         return mCommandsRunning.longValue();
+    }
+
+    @Override
+    public <TData, TQuery extends Query<TData>> TData syncLoad(TQuery query) {
+        doLoad(query);
+        return query.getResult();
     }
 
     private static class LiveHandler implements UiThread {

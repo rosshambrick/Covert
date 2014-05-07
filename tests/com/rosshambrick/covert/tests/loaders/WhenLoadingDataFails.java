@@ -1,9 +1,9 @@
 package com.rosshambrick.covert.tests.loaders;
 
-import com.rosshambrick.commandroid.tests.mocks.MockUiThread;
+import com.rosshambrick.covert.tests.mocks.MockUiThread;
 import com.rosshambrick.covert.CovertAgent;
 import com.rosshambrick.covert.LoadListener;
-import com.rosshambrick.covert.tests.mocks.FailingQuery;
+import com.rosshambrick.covert.tests.messages.FailingQuery;
 import com.rosshambrick.covert.tests.mocks.MockExecutor;
 import org.junit.Before;
 import org.junit.Test;
@@ -17,8 +17,8 @@ public class WhenLoadingDataFails implements LoadListener<FailingQuery> {
     @Before
     public void setup() {
         mExecutor = new MockExecutor();
-        CovertAgent commandProcessor = new CovertAgent(null, mExecutor, new MockUiThread());
-        commandProcessor.load(new FailingQuery(), this);
+        CovertAgent covertAgent = new CovertAgent(null, mExecutor, new MockUiThread());
+        covertAgent.load(new FailingQuery(), this);
     }
 
     @Override

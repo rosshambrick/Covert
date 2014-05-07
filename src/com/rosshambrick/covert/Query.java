@@ -8,19 +8,17 @@ public abstract class Query<TData> extends CovertMessage {
 
     public final void loadInternal() {
         if (isCanceled()) {
-            //TODO: post a CommandCanceled event?
             return;
         }
 
-        TData data = load();
-        setData(data);
+        mData = load();
     }
 
     public TData getResult() {
         return mData;
     }
 
-    public void setData(TData data) {
-        mData = data;
+    protected <T> T load(Query<T> query){
+        return mCovert.syncLoad(query);
     }
 }

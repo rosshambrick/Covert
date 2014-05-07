@@ -1,10 +1,10 @@
 package com.rosshambrick.covert.tests.loaders;
 
-import com.rosshambrick.commandroid.tests.mocks.MockUiThread;
+import com.rosshambrick.covert.tests.mocks.MockUiThread;
 import com.rosshambrick.covert.Command;
 import com.rosshambrick.covert.CovertAgent;
 import com.rosshambrick.covert.LoadListener;
-import com.rosshambrick.covert.tests.mocks.CitiesQuery;
+import com.rosshambrick.covert.tests.messages.AllCitiesQuery;
 import com.rosshambrick.covert.tests.mocks.MockDependencyInjector;
 import com.rosshambrick.covert.tests.mocks.MockExecutor;
 import org.junit.Before;
@@ -15,8 +15,8 @@ import static junit.framework.Assert.assertEquals;
 public class WhenMultipleListenersExistAndReloadOccurs {
     private int mFirstLoad;
     private int mSecondLoad;
-    private LoadListener<CitiesQuery> mFirstListener;
-    private LoadListener<CitiesQuery> mSecondListener;
+    private LoadListener<AllCitiesQuery> mFirstListener;
+    private LoadListener<AllCitiesQuery> mSecondListener;
     private MockExecutor mExecutor;
 
     @Before
@@ -28,25 +28,25 @@ public class WhenMultipleListenersExistAndReloadOccurs {
                 mExecutor,
                 new MockUiThread());
 
-        mFirstListener = new LoadListener<CitiesQuery>() {
+        mFirstListener = new LoadListener<AllCitiesQuery>() {
             @Override
-            public void loadComplete(CitiesQuery data) {
+            public void loadComplete(AllCitiesQuery data) {
                 mFirstLoad++;
             }
         };
-        mSecondListener = new LoadListener<CitiesQuery>() {
+        mSecondListener = new LoadListener<AllCitiesQuery>() {
             @Override
-            public void loadComplete(CitiesQuery data) {
+            public void loadComplete(AllCitiesQuery data) {
                 mSecondLoad++;
             }
         };
-        covertAgent.load(new CitiesQuery(), mFirstListener);
-        covertAgent.load(new CitiesQuery(), mSecondListener);
+        covertAgent.load(new AllCitiesQuery(), mFirstListener);
+        covertAgent.load(new AllCitiesQuery(), mSecondListener);
 
         covertAgent.send(new Command() {
             @Override
             protected void execute() {
-                reload(new CitiesQuery());
+                reload(new AllCitiesQuery());
             }
         });
     }
