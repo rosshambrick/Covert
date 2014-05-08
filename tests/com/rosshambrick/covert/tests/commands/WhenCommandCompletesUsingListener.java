@@ -39,12 +39,6 @@ public class WhenCommandCompletesUsingListener implements CommandListener<MockCo
         mSuccessCommand = command;
     }
 
-//    @Override
-//    public void commandFailed(MockCommand command) {
-//        mErrorCommand = command;
-//    }
-
-
     @Test
     public void shouldSendTwoCommands() {
         assertEquals(2, mExecutor.getMessagesSentCount());
@@ -52,17 +46,17 @@ public class WhenCommandCompletesUsingListener implements CommandListener<MockCo
 
     @Test
     public void shouldExecuteFirstCommand() {
-        assertTrue(mFirstCommand.isCommandExecuted());
+        assertTrue(mFirstCommand.isSuccess());
     }
 
     @Test
     public void shouldExecuteNextCommand() {
-        assertTrue(mSecondCommand.isCommandExecuted());
+        assertTrue(mSecondCommand.isSuccess());
     }
 
     @Test
     public void shouldRunCommand() {
-        assertTrue(mFirstCommand.isCommandExecuted());
+        assertTrue(mFirstCommand.isSuccess());
     }
 
     @Test

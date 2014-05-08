@@ -19,9 +19,7 @@ public class WhenCommandCompletesUsingMultipleListeners {
     private MockCommand mFirstCommand;
     private MockCommand2 mSecondCommand;
     private MockCommand mFirstCompleteCommand;
-    private MockCommand mFirstFaileCommand;
     private MockCommand2 mSecondCompleteCommand;
-    private MockCommand2 mSecondFailedCommand;
     private UiThread mUiThread;
 
     @Before
@@ -46,11 +44,6 @@ public class WhenCommandCompletesUsingMultipleListeners {
         public void commandComplete(MockCommand command) {
             mFirstCompleteCommand = command;
         }
-
-//        @Override
-//        public void commandFailed(MockCommand command) {
-//            mFirstFaileCommand = command;
-//        }
     }
 
 
@@ -59,11 +52,6 @@ public class WhenCommandCompletesUsingMultipleListeners {
         public void commandComplete(MockCommand2 command) {
             mSecondCompleteCommand = command;
         }
-
-//        @Override
-//        public void commandFailed(MockCommand2 command) {
-//            mSecondFailedCommand = command;
-//        }
     }
 
     @Test
@@ -73,17 +61,17 @@ public class WhenCommandCompletesUsingMultipleListeners {
 
     @Test
     public void shouldExecuteFirstCommand() {
-        assertTrue(mFirstCommand.isCommandExecuted());
+        assertTrue(mFirstCommand.isSuccess());
     }
 
     @Test
     public void shouldExecuteNextCommand() {
-        assertTrue(mSecondCommand.isCommandExecuted());
+        assertTrue(mSecondCommand.isSuccess());
     }
 
     @Test
     public void shouldRunCommand() {
-        assertTrue(mFirstCommand.isCommandExecuted());
+        assertTrue(mFirstCommand.isSuccess());
     }
 
     @Test
@@ -93,7 +81,7 @@ public class WhenCommandCompletesUsingMultipleListeners {
 
     @Test
     public void shouldNotReturnErrorResult() {
-        assertNull(mFirstFaileCommand);
+        assertNull(mFirstCompleteCommand.getError());
     }
 
     @Test
@@ -103,7 +91,7 @@ public class WhenCommandCompletesUsingMultipleListeners {
 
     @Test
     public void shouldNotReturnSecondFaileCommand() {
-        assertNull(mSecondFailedCommand);
+        assertNull(mSecondCompleteCommand.getError());
     }
 
     @Test
