@@ -1,3 +1,5 @@
+**NOTE: This project has been abandoned in favor of rxJava**
+
 Covert
 ===========
 
